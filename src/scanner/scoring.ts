@@ -53,18 +53,18 @@ export function computeRisk(
     };
   }
 
-  if (hasHighVuln || criticalFindingCount > 0 || highCategories >= 2) {
+  if (criticalFindingCount > 0 || highCategories >= 2) {
     return {
       level: "critical",
-      explanation: "Multiple severe risk signals detected across independent behavior categories.",
+      explanation: "Critical or multi-category high-severity behavioral signals detected.",
       score: Math.max(score, 75)
     };
   }
 
-  if (highFindingCount > 0 || findings.length >= 3 || intelMatches.length > 0) {
+  if (hasHighVuln || highFindingCount > 0 || findings.length >= 3 || intelMatches.length > 0) {
     return {
       level: "elevated",
-      explanation: "Suspicious behavioral patterns detected that deserve manual review.",
+      explanation: "Suspicious behavioral patterns or known vulnerability match detected — manual review advised.",
       score: Math.max(score, 40)
     };
   }

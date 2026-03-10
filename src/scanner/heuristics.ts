@@ -10,6 +10,12 @@ function getLineFromIndex(content: string, index: number): number {
   return content.slice(0, index).split(/\r\n|\r|\n/).length;
 }
 
+function getSnippet(content: string, index: number): string {
+  const lineIdx = getLineFromIndex(content, index) - 1;
+  const line = content.split(/\r\n|\r|\n/)[lineIdx] ?? "";
+  return line.trim().slice(0, 120);
+}
+
 async function collectFiles(dirPath: string, depth = 0, output: string[] = []): Promise<string[]> {
   if (depth > MAX_DEPTH || output.length >= MAX_FILES) {
     return output;
@@ -161,7 +167,8 @@ export async function runHeuristics(ext: ExtensionInfo, intel: IntelData): Promi
           severity: rule.severity,
           description: rule.description,
           filePath: file,
-          line: getLineFromIndex(content, match.index)
+          line: getLineFromIndex(content, match.index),
+          snippet: getSnippet(content, match.index)
         });
 
         if (rule.type === "network") {
@@ -194,7 +201,8 @@ export async function runHeuristics(ext: ExtensionInfo, intel: IntelData): Promi
           severity: "critical",
           description: `Known malicious host matched: ${hostMatch[0]}`,
           filePath: file,
-          line: getLineFromIndex(content, hostMatch.index)
+          line: getLineFromIndex(content, hostMatch.index),
+          snippet: getSnippet(content, hostMatch.index)
         });
         hasNetworkSignal = true;
 

@@ -44,6 +44,7 @@ export interface HeuristicFinding {
   description: string;
   filePath: string;
   line?: number;
+  snippet?: string;
 }
 
 export interface PermissionProfile {

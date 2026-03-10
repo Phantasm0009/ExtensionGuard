@@ -77,7 +77,7 @@ export class DetailPanel {
       }
 
       if (message.command === "manageExtension") {
-        await vscode.commands.executeCommand("workbench.extensions.search", `@installed ${result.extension.id}`);
+        await vscode.commands.executeCommand("extension.open", result.extension.id);
         return;
       }
 
@@ -130,7 +130,7 @@ export class DetailPanel {
                 <td>${f.ruleId}</td>
                 <td>${f.type}</td>
                 <td>${f.severity}</td>
-                <td>${escapeHtml(f.description)}</td>
+                <td>${escapeHtml(f.description)}${f.snippet ? `<code class="snippet">${escapeHtml(f.snippet)}</code>` : ""}</td>
                 <td>${escapeHtml(path.basename(f.filePath))}${f.line ? `:${f.line}` : ""}</td>
                 <td>
                   <button
@@ -146,6 +146,7 @@ export class DetailPanel {
                     data-description="${escapeHtmlAttr(f.description)}"
                     data-file="${escapeHtmlAttr(f.filePath)}"
                     data-line="${f.line ?? 1}"
+                    data-snippet="${escapeHtmlAttr(f.snippet ?? "")}"
                   >Copy JSON</button>
                 </td>
               </tr>
@@ -233,6 +234,13 @@ export class DetailPanel {
     th {
       background: color-mix(in srgb, var(--bg) 80%, white 20%);
     }
+    code.snippet {
+      display: block;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
@@ -319,13 +327,15 @@ ${escapeHtml(result.riskExplanation)}</div>
 
     document.querySelectorAll('.finding-copy').forEach((btn) => {
       btn.addEventListener('click', () => {
+        const snippet = btn.getAttribute('data-snippet');
         const finding = {
           ruleId: btn.getAttribute('data-rule-id') || '',
           type: btn.getAttribute('data-type') || '',
           severity: btn.getAttribute('data-severity') || '',
           description: btn.getAttribute('data-description') || '',
           filePath: btn.getAttribute('data-file') || '',
-          line: Number(btn.getAttribute('data-line') || '1')
+          line: Number(btn.getAttribute('data-line') || '1'),
+          ...(snippet ? { snippet } : {})
         };
 
         vscode.postMessage({ command: 'copyFindingJson', finding });

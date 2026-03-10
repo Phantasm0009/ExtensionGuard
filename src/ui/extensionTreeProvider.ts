@@ -2,7 +2,7 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import { FullScanReport, HeuristicFinding, ScanResult } from "../types";
 
-export type DashboardFilterMode = "all" | "criticalOnly" | "intelOnly";
+export type DashboardFilterMode = "all" | "criticalOnly" | "intelOnly" | "heuristicOnly";
 
 type TreeNode = FilterNode | SummaryNode | RiskGroupNode | ScanNode | FindingTypeNode | FindingNode | InfoNode;
 
@@ -12,10 +12,17 @@ class InfoNode extends vscode.TreeItem {
   }
 }
 
+const FILTER_LABELS: Record<DashboardFilterMode, string> = {
+  all: "All",
+  criticalOnly: "Critical only",
+  intelOnly: "Intel matches only",
+  heuristicOnly: "Heuristic findings only"
+};
+
 class FilterNode extends vscode.TreeItem {
   constructor(mode: DashboardFilterMode) {
     super("Dashboard Filter", vscode.TreeItemCollapsibleState.None);
-    this.description = mode === "all" ? "All" : mode === "criticalOnly" ? "Critical only" : "Intel matches only";
+    this.description = FILTER_LABELS[mode];
     this.iconPath = new vscode.ThemeIcon("filter");
     this.command = {
       title: "Set Dashboard Filter",
@@ -188,6 +195,9 @@ export class ExtensionTreeProvider implements vscode.TreeDataProvider<TreeNode> 
         }
         if (this.filterMode === "intelOnly") {
           return r.intelMatches.length > 0;
+        }
+        if (this.filterMode === "heuristicOnly") {
+          return r.findings.length > 0;
         }
         return true;
       });

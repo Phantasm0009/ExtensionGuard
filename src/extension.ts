@@ -247,6 +247,13 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand("extensionShield.setFilter", async () => {
       const current = treeProvider.getFilterMode();
+      const filterLabels: Record<DashboardFilterMode, string> = {
+        all: "All",
+        criticalOnly: "Critical only",
+        intelOnly: "Intel matches only",
+        heuristicOnly: "Heuristic findings only"
+      };
+
       const selected = await vscode.window.showQuickPick(
         [
           { label: "All", description: "Show all scanned extensions", mode: "all" as DashboardFilterMode },
@@ -259,13 +266,16 @@ export function activate(context: vscode.ExtensionContext): void {
             label: "Intel matches only",
             description: "Show extensions with threat intel matches",
             mode: "intelOnly" as DashboardFilterMode
+          },
+          {
+            label: "Heuristic findings only",
+            description: "Show extensions with heuristic behavior findings (excludes intel-only results)",
+            mode: "heuristicOnly" as DashboardFilterMode
           }
         ],
         {
           title: "Set ExtensionShield Dashboard Filter",
-          placeHolder: `Current: ${
-            current === "all" ? "All" : current === "criticalOnly" ? "Critical only" : "Intel matches only"
-          }`
+          placeHolder: `Current: ${filterLabels[current]}`
         }
       );
 
