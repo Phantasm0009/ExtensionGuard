@@ -1,0 +1,118 @@
+{
+  "name": "extensionshield",
+  "displayName": "ExtensionShield",
+  "description": "Local security scanner for installed VS Code extensions.",
+  "version": "0.0.1",
+  "publisher": "extensionshield",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extensionShield.scan",
+        "title": "ExtensionShield: Scan Extensions"
+      },
+      {
+        "command": "extensionShield.showExtensionSummary",
+        "title": "ExtensionShield: Show Extension Details"
+      },
+      {
+        "command": "extensionShield.rescanExtension",
+        "title": "ExtensionShield: Re-scan Extension"
+      },
+      {
+        "command": "extensionShield.openSettings",
+        "title": "ExtensionShield: Open Settings"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "extensionShield",
+          "title": "ExtensionShield",
+          "icon": "media/shield.svg"
+        }
+      ]
+    },
+    "views": {
+      "extensionShield": [
+        {
+          "id": "extensionShield.results",
+          "name": "Risk Dashboard",
+          "icon": "media/shield.svg"
+        }
+      ]
+    },
+    "menus": {
+      "view/item/context": [
+        {
+          "command": "extensionShield.showExtensionSummary",
+          "when": "view == extensionShield.results && viewItem == extensionShield.scanNode",
+          "group": "inline"
+        },
+        {
+          "command": "extensionShield.rescanExtension",
+          "when": "view == extensionShield.results && viewItem == extensionShield.scanNode",
+          "group": "inline@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ExtensionShield",
+      "properties": {
+        "extensionShield.enableHeuristics": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable heuristic static analysis checks."
+        },
+        "extensionShield.enableNetworkIntelUpdates": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow fetching updated threat intelligence from a remote endpoint."
+        },
+        "extensionShield.scanOnStartup": {
+          "type": "boolean",
+          "default": false,
+          "description": "Run a scan automatically when VS Code starts."
+        },
+        "extensionShield.ignoreExtensions": {
+          "type": "array",
+          "default": [],
+          "description": "List of extension IDs to ignore during scans.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "lint": "eslint src --ext .ts",
+    "test": "vitest run",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.0",
+    "@types/semver": "^7.5.8",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^8.12.0",
+    "@typescript-eslint/parser": "^8.12.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.13.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  },
+  "dependencies": {
+    "semver": "^7.6.3"
+  }
+}

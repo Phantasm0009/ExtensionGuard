@@ -1,0 +1,45 @@
+{
+  "maliciousExtensions": [
+    {
+      "id": "sample.bad-extension",
+      "reason": "Known malicious behavior reported by public advisory.",
+      "referenceUrl": "https://example.com/advisory/sample-bad-extension"
+    }
+  ],
+  "vulnerableExtensions": [
+    {
+      "id": "ritwickdey.LiveServer",
+      "versionRange": "<=5.7.9",
+      "severity": "critical",
+      "reason": "Potential localhost exposure due to host header validation weakness.",
+      "cve": "CVE-2025-65717",
+      "referenceUrl": "https://example.com/cve-2025-65717"
+    },
+    {
+      "id": "formulahendry.code-runner",
+      "versionRange": "<=0.12.0",
+      "severity": "high",
+      "reason": "Configuration hijack risk when executor maps are abused.",
+      "referenceUrl": "https://example.com/code-runner-risk"
+    },
+    {
+      "id": "shd101wyy.markdown-preview-enhanced",
+      "versionRange": "<=0.8.15",
+      "severity": "high",
+      "reason": "Historical command execution vulnerability in markdown preview chain.",
+      "referenceUrl": "https://example.com/mpe-advisory"
+    }
+  ],
+  "maliciousHosts": [
+    {
+      "hostOrIp": "203.0.113.7",
+      "reason": "Known data exfiltration endpoint from public campaign report.",
+      "referenceUrl": "https://example.com/exfil-campaign"
+    },
+    {
+      "hostOrIp": "malicious-c2.example",
+      "reason": "Known command and control host used by malicious extension samples.",
+      "referenceUrl": "https://example.com/c2-report"
+    }
+  ]
+}
