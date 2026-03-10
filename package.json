@@ -21,6 +21,10 @@
         "title": "ExtensionShield: Scan Extensions"
       },
       {
+        "command": "extensionShield.setFilter",
+        "title": "ExtensionShield: Set Dashboard Filter"
+      },
+      {
         "command": "extensionShield.showExtensionSummary",
         "title": "ExtensionShield: Show Extension Details"
       },
@@ -52,6 +56,13 @@
       ]
     },
     "menus": {
+      "view/title": [
+        {
+          "command": "extensionShield.setFilter",
+          "when": "view == extensionShield.results",
+          "group": "navigation"
+        }
+      ],
       "view/item/context": [
         {
           "command": "extensionShield.showExtensionSummary",
@@ -90,6 +101,11 @@
           "items": {
             "type": "string"
           }
+        },
+        "extensionShield.showLowRiskBucket": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show low-risk extensions in the dashboard."
         }
       }
     }

@@ -2,11 +2,25 @@ import * as path from "node:path";
 import * as vscode from "vscode";
 import { FullScanReport, HeuristicFinding, ScanResult } from "../types";
 
-type TreeNode = SummaryNode | RiskGroupNode | ScanNode | FindingTypeNode | FindingNode | InfoNode;
+export type DashboardFilterMode = "all" | "criticalOnly" | "intelOnly";
+
+type TreeNode = FilterNode | SummaryNode | RiskGroupNode | ScanNode | FindingTypeNode | FindingNode | InfoNode;
 
 class InfoNode extends vscode.TreeItem {
   constructor(label: string) {
     super(label, vscode.TreeItemCollapsibleState.None);
+  }
+}
+
+class FilterNode extends vscode.TreeItem {
+  constructor(mode: DashboardFilterMode) {
+    super("Dashboard Filter", vscode.TreeItemCollapsibleState.None);
+    this.description = mode === "all" ? "All" : mode === "criticalOnly" ? "Critical only" : "Intel matches only";
+    this.iconPath = new vscode.ThemeIcon("filter");
+    this.command = {
+      title: "Set Dashboard Filter",
+      command: "extensionShield.setFilter"
+    };
   }
 }
 
@@ -91,6 +105,7 @@ export class ExtensionTreeProvider implements vscode.TreeDataProvider<TreeNode> 
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   private report: FullScanReport | null = null;
+  private filterMode: DashboardFilterMode = "all";
 
   public setReport(report: FullScanReport): void {
     this.report = report;
@@ -99,6 +114,15 @@ export class ExtensionTreeProvider implements vscode.TreeDataProvider<TreeNode> 
 
   public getReport(): FullScanReport | null {
     return this.report;
+  }
+
+  public setFilterMode(mode: DashboardFilterMode): void {
+    this.filterMode = mode;
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  public getFilterMode(): DashboardFilterMode {
+    return this.filterMode;
   }
 
   getTreeItem(element: TreeNode): vscode.TreeItem {
@@ -111,16 +135,36 @@ export class ExtensionTreeProvider implements vscode.TreeDataProvider<TreeNode> 
     }
 
     if (!element) {
-      const critical = this.report.results.filter((r) => r.riskLevel === "critical");
-      const elevated = this.report.results.filter((r) => r.riskLevel === "elevated");
-      const low = this.report.results.filter((r) => r.riskLevel === "low");
+      const showLowRiskBucket = vscode.workspace
+        .getConfiguration("extensionShield")
+        .get<boolean>("showLowRiskBucket", false);
 
-      return Promise.resolve([
+      const filteredResults = this.report.results.filter((r) => {
+        if (this.filterMode === "criticalOnly") {
+          return r.riskLevel === "critical";
+        }
+        if (this.filterMode === "intelOnly") {
+          return r.intelMatches.length > 0;
+        }
+        return true;
+      });
+
+      const critical = filteredResults.filter((r) => r.riskLevel === "critical");
+      const elevated = filteredResults.filter((r) => r.riskLevel === "elevated");
+      const low = filteredResults.filter((r) => r.riskLevel === "low");
+
+      const nodes: TreeNode[] = [
+        new FilterNode(this.filterMode),
         new SummaryNode(this.report),
         new RiskGroupNode("critical", critical),
-        new RiskGroupNode("elevated", elevated),
-        new RiskGroupNode("low", low)
-      ]);
+        new RiskGroupNode("elevated", elevated)
+      ];
+
+      if (showLowRiskBucket) {
+        nodes.push(new RiskGroupNode("low", low));
+      }
+
+      return Promise.resolve(nodes);
     }
 
     if (element instanceof RiskGroupNode) {

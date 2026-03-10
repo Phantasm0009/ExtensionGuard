@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { runFullScan, runSingleExtensionScan } from "./scanner";
 import { ScanResult } from "./types";
-import { ExtensionTreeProvider } from "./ui/extensionTreeProvider";
+import { DashboardFilterMode, ExtensionTreeProvider } from "./ui/extensionTreeProvider";
 import { DetailPanel } from "./ui/detailPanel";
 import { RiskStatusBar } from "./ui/statusBar";
 
@@ -113,6 +113,39 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand("extensionShield.setFilter", async () => {
+      const current = treeProvider.getFilterMode();
+      const selected = await vscode.window.showQuickPick(
+        [
+          { label: "All", description: "Show all scanned extensions", mode: "all" as DashboardFilterMode },
+          {
+            label: "Critical only",
+            description: "Show only critical-risk extensions",
+            mode: "criticalOnly" as DashboardFilterMode
+          },
+          {
+            label: "Intel matches only",
+            description: "Show extensions with threat intel matches",
+            mode: "intelOnly" as DashboardFilterMode
+          }
+        ],
+        {
+          title: "Set ExtensionShield Dashboard Filter",
+          placeHolder: `Current: ${
+            current === "all" ? "All" : current === "criticalOnly" ? "Critical only" : "Intel matches only"
+          }`
+        }
+      );
+
+      if (!selected) {
+        return;
+      }
+
+      treeProvider.setFilterMode(selected.mode);
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand("extensionShield.rescanExtension", async (item?: { result?: ScanResult }) => {
       const id = item?.result?.extension.id;
       await rescanExtension(context, id);
@@ -153,6 +186,14 @@ export function activate(context: vscode.ExtensionContext): void {
   if (config.get<boolean>("scanOnStartup", false)) {
     void executeFullScan(context);
   }
+
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration("extensionShield.showLowRiskBucket")) {
+        treeProvider.setFilterMode(treeProvider.getFilterMode());
+      }
+    })
+  );
 }
 
 export function deactivate(): void {
