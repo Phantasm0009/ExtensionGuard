@@ -19,7 +19,10 @@ export function discoverExtensions(ignoreList: string[] = []): ExtensionInfo[] {
         activationEvents: (pkg?.activationEvents as string[]) ?? [],
         contributes: {
           commands: (contributes.commands as Array<{ command: string; title?: string }>) ?? [],
-          configuration: contributes.configuration
+          configuration: contributes.configuration,
+          terminal: contributes.terminal,
+          debuggers: contributes.debuggers,
+          taskDefinitions: contributes.taskDefinitions
         },
         main: typeof pkg?.main === "string" ? pkg.main : undefined,
         browser: typeof pkg?.browser === "string" ? pkg.browser : undefined

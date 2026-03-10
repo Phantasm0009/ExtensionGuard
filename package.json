@@ -21,8 +21,20 @@
         "title": "ExtensionShield: Scan Extensions"
       },
       {
+        "command": "extensionShield.exportReport",
+        "title": "ExtensionShield: Export Last Report"
+      },
+      {
+        "command": "extensionShield.refreshIntel",
+        "title": "ExtensionShield: Refresh Intel Now"
+      },
+      {
         "command": "extensionShield.setFilter",
         "title": "ExtensionShield: Set Dashboard Filter"
+      },
+      {
+        "command": "extensionShield.markTrusted",
+        "title": "ExtensionShield: Toggle Trusted Extension"
       },
       {
         "command": "extensionShield.showExtensionSummary",
@@ -58,9 +70,14 @@
     "menus": {
       "view/title": [
         {
+          "command": "extensionShield.refreshIntel",
+          "when": "view == extensionShield.results",
+          "group": "navigation@1"
+        },
+        {
           "command": "extensionShield.setFilter",
           "when": "view == extensionShield.results",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [
@@ -73,6 +90,11 @@
           "command": "extensionShield.rescanExtension",
           "when": "view == extensionShield.results && viewItem == extensionShield.scanNode",
           "group": "inline@2"
+        },
+        {
+          "command": "extensionShield.markTrusted",
+          "when": "view == extensionShield.results && viewItem == extensionShield.scanNode",
+          "group": "inline@3"
         }
       ]
     },
@@ -87,17 +109,35 @@
         "extensionShield.enableNetworkIntelUpdates": {
           "type": "boolean",
           "default": false,
-          "description": "Allow fetching updated threat intelligence from a remote endpoint."
+          "description": "Allow fetching updated threat intelligence from a remote endpoint. When enabled, ExtensionShield may make outbound requests for intel updates."
+        },
+        "extensionShield.intelUpdateUrl": {
+          "type": "string",
+          "default": "https://raw.githubusercontent.com/extension-shield/intel/main/intel.json",
+          "description": "Remote intel URL used when network intel updates are enabled."
         },
         "extensionShield.scanOnStartup": {
           "type": "boolean",
           "default": false,
           "description": "Run a scan automatically when VS Code starts."
         },
+        "extensionShield.scanOnExtensionChange": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically re-scan when extensions are installed, removed, enabled, or disabled."
+        },
         "extensionShield.ignoreExtensions": {
           "type": "array",
           "default": [],
           "description": "List of extension IDs to ignore during scans.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "extensionShield.trustedExtensions": {
+          "type": "array",
+          "default": [],
+          "description": "Extension IDs to suppress heuristic warnings for (threat intel matches are still shown).",
           "items": {
             "type": "string"
           }

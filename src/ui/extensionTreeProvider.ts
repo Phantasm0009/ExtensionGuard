@@ -32,7 +32,9 @@ class SummaryNode extends vscode.TreeItem {
     this.iconPath = new vscode.ThemeIcon(
       report.overallRisk === "critical" ? "error" : report.overallRisk === "elevated" ? "warning" : "pass"
     );
-    this.tooltip = `Last scan: ${new Date(report.timestamp).toLocaleString()}`;
+    const updatedAt = new Date(report.intelUpdatedAt);
+    const ageDays = Math.max(0, Math.floor((Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)));
+    this.tooltip = `Last scan: ${new Date(report.timestamp).toLocaleString()}\nIntel source: ${report.intelSource}\nIntel last updated: ${ageDays} day(s) ago`;
   }
 }
 
@@ -64,13 +66,15 @@ class ScanNode extends vscode.TreeItem {
     const findingCount = result.findings.length;
     const intelCount = result.intelMatches.length;
     this.description = `${result.extension.id} | findings ${findingCount} | intel ${intelCount}`;
-    this.iconPath = new vscode.ThemeIcon(
-      result.riskLevel === "critical"
-        ? "error"
-        : result.riskLevel === "elevated"
-          ? "warning"
-          : "pass"
-    );
+    this.iconPath = result.isTrustedByUser && !result.intelMatches.length
+      ? new vscode.ThemeIcon("shield", new vscode.ThemeColor("disabledForeground"))
+      : new vscode.ThemeIcon(
+          result.riskLevel === "critical"
+            ? "error"
+            : result.riskLevel === "elevated"
+              ? "warning"
+              : "pass"
+        );
     this.tooltip = `${result.riskExplanation}\nPath: ${result.extension.extensionPath}`;
     this.contextValue = "extensionShield.scanNode";
     this.command = {
@@ -109,6 +113,45 @@ export class ExtensionTreeProvider implements vscode.TreeDataProvider<TreeNode> 
 
   public setReport(report: FullScanReport): void {
     this.report = report;
+    this._onDidChangeTreeData.fire(undefined);
+  }
+
+  public upsertResult(result: ScanResult): void {
+    if (!this.report) {
+      this.report = {
+        timestamp: new Date().toISOString(),
+        overallRisk: result.riskLevel,
+        summary: {
+          scanned: 1,
+          critical: result.riskLevel === "critical" ? 1 : 0,
+          elevated: result.riskLevel === "elevated" ? 1 : 0,
+          low: result.riskLevel === "low" ? 1 : 0
+        },
+        results: [result],
+        intelSource: "bundled",
+        intelUpdatedAt: new Date().toISOString()
+      };
+      this._onDidChangeTreeData.fire(undefined);
+      return;
+    }
+
+    const existing = this.report.results.findIndex((item) => item.extension.id === result.extension.id);
+    if (existing >= 0) {
+      this.report.results[existing] = result;
+    } else {
+      this.report.results.push(result);
+    }
+
+    const order: Record<ScanResult["riskLevel"], number> = { critical: 0, elevated: 1, low: 2 };
+    this.report.results.sort((a, b) => order[a.riskLevel] - order[b.riskLevel]);
+    this.report.summary = {
+      scanned: this.report.results.length,
+      critical: this.report.results.filter((r) => r.riskLevel === "critical").length,
+      elevated: this.report.results.filter((r) => r.riskLevel === "elevated").length,
+      low: this.report.results.filter((r) => r.riskLevel === "low").length
+    };
+    this.report.overallRisk = this.report.summary.critical > 0 ? "critical" : this.report.summary.elevated > 0 ? "elevated" : "low";
+    this.report.timestamp = new Date().toISOString();
     this._onDidChangeTreeData.fire(undefined);
   }
 

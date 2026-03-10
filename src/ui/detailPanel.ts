@@ -81,6 +81,11 @@ export class DetailPanel {
         return;
       }
 
+      if (message.command === "toggleTrusted") {
+        await vscode.commands.executeCommand("extensionShield.markTrusted", { result });
+        return;
+      }
+
       if (message.command === "disableExtension") {
         await vscode.commands.executeCommand("workbench.extensions.search", `@installed ${result.extension.id}`);
         void vscode.window.showInformationMessage(
@@ -235,13 +240,33 @@ export class DetailPanel {
     <h1>${escapeHtml(result.extension.name)} (${escapeHtml(result.extension.id)})</h1>
     <div class="meta">Version: ${escapeHtml(result.extension.version)}
 Risk: ${escapeHtml(result.riskLevel.toUpperCase())}
+Risk Score: ${result.riskScore}
 ${escapeHtml(result.riskExplanation)}</div>
   </div>
+
+  ${result.isTrustedByUser ? `<div class="meta">Trusted by user; ${result.suppressedFindingsCount} heuristic finding(s) suppressed.</div>` : ""}
 
   <div class="actions">
     <button id="manage-btn">Open Extension in Marketplace View</button>
     <button id="disable-btn" class="secondary">Guide: Disable Extension</button>
+    <button id="trust-btn" class="secondary">${result.isTrustedByUser ? "Untrust" : "Mark Trusted"}</button>
   </div>
+
+  <h2>Capabilities</h2>
+  <table>
+    <thead>
+      <tr><th>Runs On Startup</th><th>Terminal Access</th><th>Debug Access</th><th>Task Provider</th><th>Commands</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>${result.permissionProfile.runsOnStartup ? "Yes" : "No"}</td>
+        <td>${result.permissionProfile.hasTerminalAccess ? "Yes" : "No"}</td>
+        <td>${result.permissionProfile.hasDebugAccess ? "Yes" : "No"}</td>
+        <td>${result.permissionProfile.hasTaskProvider ? "Yes" : "No"}</td>
+        <td>${result.permissionProfile.commandCount}</td>
+      </tr>
+    </tbody>
+  </table>
 
   <h2>Threat Intel Matches</h2>
   <table>
@@ -276,6 +301,10 @@ ${escapeHtml(result.riskExplanation)}</div>
 
     document.getElementById('disable-btn').addEventListener('click', () => {
       vscode.postMessage({ command: 'disableExtension' });
+    });
+
+    document.getElementById('trust-btn').addEventListener('click', () => {
+      vscode.postMessage({ command: 'toggleTrusted' });
     });
 
     document.querySelectorAll('.finding-open').forEach((btn) => {

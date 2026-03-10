@@ -16,12 +16,13 @@ describe("computeRisk", () => {
     );
 
     expect(result.level).toBe("critical");
+    expect(result.score).toBeGreaterThanOrEqual(90);
   });
 
   it("returns elevated for high heuristic findings", () => {
     const result = computeRisk([], [
       {
-        ruleId: "H5",
+        ruleId: "H6",
         type: "process",
         severity: "high",
         description: "exec",
@@ -31,6 +32,7 @@ describe("computeRisk", () => {
     ]);
 
     expect(result.level).toBe("elevated");
+    expect(result.score).toBeGreaterThan(0);
   });
 
   it("returns low for no intel and no findings", () => {

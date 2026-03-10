@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { FullScanReport, RiskLevel, ScanResult } from "../types";
+import { ExtensionInfo, FullScanReport, PermissionProfile, RiskLevel, ScanResult } from "../types";
 import { getCachedResult, setCachedResult } from "./cache";
 import { discoverExtensions } from "./discovery";
 import { runHeuristics } from "./heuristics";
@@ -16,36 +16,105 @@ function getWorstRisk(levels: RiskLevel[]): RiskLevel {
   return "low";
 }
 
+function buildPermissionProfile(ext: ExtensionInfo): PermissionProfile {
+  const activation = ext.activationEvents ?? [];
+  const contributes = ext.contributes ?? {};
+
+  return {
+    runsOnStartup: activation.includes("*") || activation.includes("onStartupFinished"),
+    hasTerminalAccess: Boolean(contributes.terminal),
+    hasDebugAccess: Array.isArray(contributes.debuggers) ? contributes.debuggers.length > 0 : Boolean(contributes.debuggers),
+    hasTaskProvider: Array.isArray(contributes.taskDefinitions)
+      ? contributes.taskDefinitions.length > 0
+      : Boolean(contributes.taskDefinitions),
+    commandCount: Array.isArray(contributes.commands) ? contributes.commands.length : 0
+  };
+}
+
+function applyTrustBehavior(
+  extId: string,
+  findings: ScanResult["findings"],
+  intelMatches: ScanResult["intelMatches"],
+  trustedSet: Set<string>
+): { effectiveFindings: ScanResult["findings"]; isTrustedByUser: boolean; suppressedFindingsCount: number } {
+  const isTrusted = trustedSet.has(extId.toLowerCase());
+  const hasMaliciousIntel = intelMatches.some((m) => m.type === "maliciousExtension");
+
+  if (!isTrusted || hasMaliciousIntel) {
+    return { effectiveFindings: findings, isTrustedByUser: isTrusted, suppressedFindingsCount: 0 };
+  }
+
+  return {
+    effectiveFindings: [],
+    isTrustedByUser: true,
+    suppressedFindingsCount: findings.length
+  };
+}
+
 export async function runFullScan(context: vscode.ExtensionContext): Promise<FullScanReport> {
   const config = vscode.workspace.getConfiguration("extensionShield");
   const ignore = config.get<string[]>("ignoreExtensions", []);
+  const trusted = config.get<string[]>("trustedExtensions", []);
   const enableHeuristics = config.get<boolean>("enableHeuristics", true);
+  const trustedSet = new Set(trusted.map((id) => id.toLowerCase()));
 
   const allExtensions = discoverExtensions(ignore).filter((ext) => !ext.isBuiltin);
-  const intel = await loadIntel(context.extensionPath);
+  const intelLoad = await loadIntel(context, config);
+  const intel = intelLoad.intel;
   const results: ScanResult[] = [];
 
   for (const ext of allExtensions) {
     const cached = getCachedResult(context, ext.id, ext.version);
     if (cached) {
-      results.push(cached);
+      const trust = applyTrustBehavior(cached.extension.id, cached.findings, cached.intelMatches, trustedSet);
+      const score = computeRisk(cached.intelMatches, trust.effectiveFindings);
+      results.push({
+        ...cached,
+        findings: trust.effectiveFindings,
+        riskLevel: score.level,
+        riskScore: score.score,
+        riskExplanation: trust.isTrustedByUser && !cached.intelMatches.length
+          ? "Trusted by user; heuristic findings suppressed."
+          : score.explanation,
+        permissionProfile: cached.permissionProfile ?? buildPermissionProfile(cached.extension),
+        isTrustedByUser: trust.isTrustedByUser,
+        suppressedFindingsCount: trust.suppressedFindingsCount
+      });
       continue;
     }
 
     const intelMatches = matchThreatIntel(ext, intel);
     const findings = enableHeuristics ? await runHeuristics(ext, intel) : [];
-    const score = computeRisk(intelMatches, findings);
+    const trust = applyTrustBehavior(ext.id, findings, intelMatches, trustedSet);
+    const score = computeRisk(intelMatches, trust.effectiveFindings);
 
     const result: ScanResult = {
       extension: ext,
       intelMatches,
-      findings,
+      findings: trust.effectiveFindings,
       riskLevel: score.level,
-      riskExplanation: score.explanation
+      riskScore: score.score,
+      riskExplanation:
+        trust.isTrustedByUser && !intelMatches.length
+          ? "Trusted by user; heuristic findings suppressed."
+          : score.explanation,
+      permissionProfile: buildPermissionProfile(ext),
+      isTrustedByUser: trust.isTrustedByUser,
+      suppressedFindingsCount: trust.suppressedFindingsCount
+    };
+
+    const cachedResult: ScanResult = {
+      ...result,
+      findings,
+      riskLevel: computeRisk(intelMatches, findings).level,
+      riskScore: computeRisk(intelMatches, findings).score,
+      riskExplanation: computeRisk(intelMatches, findings).explanation,
+      isTrustedByUser: false,
+      suppressedFindingsCount: 0
     };
 
     results.push(result);
-    await setCachedResult(context, ext.id, ext.version, result);
+    await setCachedResult(context, ext.id, ext.version, cachedResult);
   }
 
   results.sort((a, b) => {
@@ -64,7 +133,9 @@ export async function runFullScan(context: vscode.ExtensionContext): Promise<Ful
     timestamp: new Date().toISOString(),
     overallRisk: getWorstRisk(results.map((r) => r.riskLevel)),
     summary,
-    results
+    results,
+    intelSource: intelLoad.source,
+    intelUpdatedAt: intelLoad.updatedAt
   };
 }
 
@@ -78,19 +149,39 @@ export async function runSingleExtensionScan(
     return undefined;
   }
 
-  const intel = await loadIntel(context.extensionPath);
+  const cfg = vscode.workspace.getConfiguration("extensionShield");
+  const intelLoad = await loadIntel(context, cfg);
+  const intel = intelLoad.intel;
+  const trusted = cfg.get<string[]>("trustedExtensions", []);
+  const trustedSet = new Set(trusted.map((id) => id.toLowerCase()));
   const intelMatches = matchThreatIntel(ext, intel);
-  const findings = await runHeuristics(ext, intel);
-  const score = computeRisk(intelMatches, findings);
+  const rawFindings = await runHeuristics(ext, intel);
+  const trust = applyTrustBehavior(ext.id, rawFindings, intelMatches, trustedSet);
+  const score = computeRisk(intelMatches, trust.effectiveFindings);
 
   const result: ScanResult = {
     extension: ext,
     intelMatches,
-    findings,
+    findings: trust.effectiveFindings,
     riskLevel: score.level,
-    riskExplanation: score.explanation
+    riskScore: score.score,
+    riskExplanation:
+      trust.isTrustedByUser && !intelMatches.length
+        ? "Trusted by user; heuristic findings suppressed."
+        : score.explanation,
+    permissionProfile: buildPermissionProfile(ext),
+    isTrustedByUser: trust.isTrustedByUser,
+    suppressedFindingsCount: trust.suppressedFindingsCount
   };
 
-  await setCachedResult(context, ext.id, ext.version, result);
+  await setCachedResult(context, ext.id, ext.version, {
+    ...result,
+    findings: rawFindings,
+    riskLevel: computeRisk(intelMatches, rawFindings).level,
+    riskScore: computeRisk(intelMatches, rawFindings).score,
+    riskExplanation: computeRisk(intelMatches, rawFindings).explanation,
+    isTrustedByUser: false,
+    suppressedFindingsCount: 0
+  });
   return result;
 }

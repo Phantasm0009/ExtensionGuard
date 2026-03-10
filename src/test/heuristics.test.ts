@@ -38,6 +38,18 @@ const intel: IntelData = {
 };
 
 describe("runHeuristics", () => {
+  it("captures multiple matches per rule in the same file", async () => {
+    const ext = await makeTempExtension(`
+      const cp = require('child_process');
+      cp.exec('whoami');
+      cp.exec('hostname');
+    `);
+
+    const findings = await runHeuristics(ext, intel);
+    const processFindings = findings.filter((f) => f.ruleId === "H6");
+    expect(processFindings.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("detects process and network indicators", async () => {
     const ext = await makeTempExtension(`
       const cp = require('child_process');
@@ -50,7 +62,7 @@ describe("runHeuristics", () => {
 
     expect(ids).toContain("H1");
     expect(ids).toContain("H3");
-    expect(ids).toContain("H5");
+    expect(ids).toContain("H6");
   });
 
   it("detects known malicious hosts", async () => {

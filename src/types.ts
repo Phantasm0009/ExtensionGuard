@@ -1,5 +1,14 @@
 export type RiskLevel = "critical" | "elevated" | "low";
 export type FindingSeverity = "critical" | "high" | "medium" | "low";
+export type FindingType =
+  | "network"
+  | "process"
+  | "filesystem"
+  | "obfuscation"
+  | "globalState"
+  | "config"
+  | "localhost"
+  | "typosquat";
 
 export interface ExtensionInfo {
   id: string;
@@ -12,6 +21,9 @@ export interface ExtensionInfo {
   contributes: {
     commands?: Array<{ command: string; title?: string }>;
     configuration?: unknown;
+    terminal?: unknown;
+    debuggers?: unknown;
+    taskDefinitions?: unknown;
   };
   main?: string;
   browser?: string;
@@ -27,11 +39,19 @@ export interface ThreatIntelMatch {
 
 export interface HeuristicFinding {
   ruleId: string;
-  type: "network" | "process" | "filesystem" | "obfuscation" | "globalState" | "config" | "localhost";
+  type: FindingType;
   severity: FindingSeverity;
   description: string;
   filePath: string;
   line?: number;
+}
+
+export interface PermissionProfile {
+  runsOnStartup: boolean;
+  hasTerminalAccess: boolean;
+  hasDebugAccess: boolean;
+  hasTaskProvider: boolean;
+  commandCount: number;
 }
 
 export interface ScanResult {
@@ -39,7 +59,11 @@ export interface ScanResult {
   intelMatches: ThreatIntelMatch[];
   findings: HeuristicFinding[];
   riskLevel: RiskLevel;
+  riskScore: number;
   riskExplanation: string;
+  permissionProfile: PermissionProfile;
+  isTrustedByUser: boolean;
+  suppressedFindingsCount: number;
 }
 
 export interface ScanSummary {
@@ -54,6 +78,8 @@ export interface FullScanReport {
   overallRisk: RiskLevel;
   summary: ScanSummary;
   results: ScanResult[];
+  intelSource: "bundled" | "remote" | "cached-remote";
+  intelUpdatedAt: string;
 }
 
 export interface IntelData {

@@ -1,9 +1,69 @@
 {
   "maliciousExtensions": [
     {
-      "id": "sample.bad-extension",
-      "reason": "Known malicious behavior reported by public advisory.",
-      "referenceUrl": "https://example.com/advisory/sample-bad-extension"
+      "id": "prettierteam.prettier",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025). Reported in cryptominer campaign.",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "discord-inc.discord-rich-presence-rpc",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025). Reported in cryptominer campaign.",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "evaera-rbx.vscode-rojo-rbx",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025). Reported in cryptominer campaign.",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "MarkH.chatgpt-autocoder-vscode",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "MarkH.claude-autocoder-vscode",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "MarkH.discord-rich-presence-vs",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "MarkH.golang-compiler-vscode",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "MarkH.html-obfuscator-vscode",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "MarkH.python-obfuscator-vscode",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "MarkH.rust-compiler-vs",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "VSCodeDeveloper.sobidity-compiler",
+      "reason": "Removed from VS Marketplace as Malware (4/7/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "ShowSnowcrypto.SnowShoNo",
+      "reason": "Removed from VS Marketplace as Malware (9/07/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
+    },
+    {
+      "id": "Crypto-Extensions.SnowShsoNo",
+      "reason": "Removed from VS Marketplace as Malware (9/10/2025).",
+      "referenceUrl": "https://raw.githubusercontent.com/microsoft/vsmarketplace/main/RemovedPackages.md"
     }
   ],
   "vulnerableExtensions": [
@@ -13,33 +73,33 @@
       "severity": "critical",
       "reason": "Potential localhost exposure due to host header validation weakness.",
       "cve": "CVE-2025-65717",
-      "referenceUrl": "https://example.com/cve-2025-65717"
+      "referenceUrl": "https://nvd.nist.gov/vuln/detail/CVE-2025-65717"
     },
     {
       "id": "formulahendry.code-runner",
       "versionRange": "<=0.12.0",
       "severity": "high",
       "reason": "Configuration hijack risk when executor maps are abused.",
-      "referenceUrl": "https://example.com/code-runner-risk"
+      "referenceUrl": "https://github.com/formulahendry/vscode-code-runner/issues"
     },
     {
       "id": "shd101wyy.markdown-preview-enhanced",
       "versionRange": "<=0.8.15",
       "severity": "high",
       "reason": "Historical command execution vulnerability in markdown preview chain.",
-      "referenceUrl": "https://example.com/mpe-advisory"
+      "referenceUrl": "https://security.snyk.io/package/npm/%40shd101wyy%2Fmarkdown-preview-enhanced"
     }
   ],
   "maliciousHosts": [
     {
-      "hostOrIp": "203.0.113.7",
-      "reason": "Known data exfiltration endpoint from public campaign report.",
-      "referenceUrl": "https://example.com/exfil-campaign"
+      "hostOrIp": "asdf11.xyz",
+      "reason": "PowerShell payload host observed in VS Code extension cryptominer campaign.",
+      "referenceUrl": "https://www.bleepingcomputer.com/news/security/malicious-vscode-extensions-infect-windows-with-cryptominers/"
     },
     {
-      "hostOrIp": "malicious-c2.example",
-      "reason": "Known command and control host used by malicious extension samples.",
-      "referenceUrl": "https://example.com/c2-report"
+      "hostOrIp": "myaunet.su",
+      "reason": "Secondary host observed downloading XMRig in VS Code extension cryptominer campaign.",
+      "referenceUrl": "https://www.bleepingcomputer.com/news/security/malicious-vscode-extensions-infect-windows-with-cryptominers/"
     }
   ]
 }

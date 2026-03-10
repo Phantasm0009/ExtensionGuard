@@ -1,12 +1,14 @@
-import { IntelData } from "../types";
+import { FindingType, IntelData } from "../types";
 
 export interface RawRule {
   id: string;
-  type: "network" | "process" | "filesystem" | "obfuscation" | "globalState" | "config" | "localhost";
+  type: FindingType;
   severity: "critical" | "high" | "medium" | "low";
   description: string;
   regex: RegExp;
 }
+
+export const TRUSTED_PUBLISHERS = ["ms-vscode", "ms-python", "github", "redhat", "esbenp", "dbaeumer"];
 
 export const RAW_RULES: RawRule[] = [
   {
@@ -32,13 +34,20 @@ export const RAW_RULES: RawRule[] = [
   },
   {
     id: "H5",
+    type: "network",
+    severity: "critical",
+    description: "Discord webhook URL detected; common data exfiltration vector.",
+    regex: /https:\/\/discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+/g
+  },
+  {
+    id: "H6",
     type: "process",
     severity: "high",
     description: "Process execution API usage detected.",
     regex: /\b(child_process|exec\(|spawn\(|execFile\(|execSync\()/g
   },
   {
-    id: "H7",
+    id: "H8",
     type: "filesystem",
     severity: "high",
     description: "Sensitive credential path pattern detected.",
@@ -50,6 +59,13 @@ export const RAW_RULES: RawRule[] = [
     severity: "high",
     description: "Dynamic code execution pattern detected.",
     regex: /\b(eval\(|new Function\(|require\([^\)]*\+[^\)]*\))/g
+  },
+  {
+    id: "H10",
+    type: "filesystem",
+    severity: "medium",
+    description: "Sensitive OS path access pattern detected.",
+    regex: /(process\.env\.HOME|os\.homedir\(\)|AppData|\.vscode|\/etc\/|\\Users\\)/g
   },
   {
     id: "H11",
